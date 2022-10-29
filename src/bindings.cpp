@@ -201,19 +201,40 @@ std::string version(){
   return v8::V8::GetVersion();
 }
 
+static Rcpp::RawVector buffer_to_rawvec(v8::Local<v8::Value> source){
+  size_t length = 0;
+  const uint8_t* start = NULL;
+  if (source->IsArrayBuffer()) {
+    v8::Local<v8::ArrayBuffer> buffer = v8::Local<v8::ArrayBuffer>::Cast(source);
+    auto backing_store = buffer->GetBackingStore();
+    start = reinterpret_cast<const uint8_t*>(backing_store->Data());
+    length = backing_store->ByteLength();
+    //*is_shared = buffer->IsSharedArrayBuffer();
+  } else if (source->IsTypedArray()) {
+    v8::Local<v8::TypedArray> array = v8::Local<v8::TypedArray>::Cast(source);
+    v8::Local<v8::ArrayBuffer> buffer = array->Buffer();
+    auto backing_store = buffer->GetBackingStore();
+    start = reinterpret_cast<const uint8_t*>(backing_store->Data()) + array->ByteOffset();
+    length = array->ByteLength();
+    //*is_shared = buffer->IsSharedArrayBuffer();
+  }
+  Rcpp::RawVector out(length);
+  memcpy(out.begin(), start, length);
+  return out;
+}
+
 static Rcpp::RObject convert_object(v8::Local<v8::Value> value){
   if(value.IsEmpty() || value->IsNullOrUndefined()){
     return R_NilValue;
   } else if(value->IsArrayBuffer() || value->IsArrayBufferView()){
-    v8::Local<v8::ArrayBuffer> buffer = value->IsArrayBufferView() ?
-    value.As<v8::ArrayBufferView>()->Buffer() : value.As<v8::ArrayBuffer>();
-    Rcpp::RawVector data(buffer->ByteLength());
 #if (V8_MAJOR_VERSION * 100 + V8_MINOR_VERSION) >= 901
-    memcpy(data.begin(), buffer->GetBackingStore()->Data(), data.size());
+    return buffer_to_rawvec(value);
 #else
+    v8::Local<v8::ArrayBuffer> buffer = value->IsArrayBufferView() ? value.As<v8::ArrayBufferView>()->Buffer() : value.As<v8::ArrayBuffer>();
+    Rcpp::RawVector data(buffer->ByteLength());
     memcpy(data.begin(), buffer->GetContents().Data(), data.size());
-#endif
     return data;
+#endif
   } else {
     //convert to string without jsonify
     //v8::String::Utf8Value utf8(isolate, value);
