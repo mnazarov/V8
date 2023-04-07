@@ -1,6 +1,7 @@
 # Build against UCRT build of libv8
 if(!file.exists('../windows/ucrt64/include/v8.h')){
   cdn <- if(getRcppVersion() < 4){
+    writeLines('CXX_STD = CXX11', 'Makevars.win')
     'https://github.com/jeroen/V8/releases/download/v3.6.0/v8-6.2.414.50-win.tar.xz'
   } else {
     ifelse(isTRUE(grepl('ucrt', R.version$crt)),

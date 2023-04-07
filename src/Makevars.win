@@ -1,4 +1,4 @@
-#CXX_STD = CXX11
+CXX_STD = CXX17
 RWINLIB =../windows/mingw$(WIN)
 PKG_CPPFLAGS = -I$(RWINLIB)/include $(subst $(WIN),,-DV8_COMPRESS_POINTERS64)
 PKG_LIBS = \
