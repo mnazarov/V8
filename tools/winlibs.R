@@ -7,7 +7,7 @@ if(!file.exists('../windows/ucrt64/include/v8.h')){
   dir.create("../windows", showWarnings = FALSE)
   untar('libv8.tar.xz', exdir = "../windows", tar = 'internal')
   unlink('libv8.tar.xz')
-  if(grepl('ucrt', R.version$crt)){
+  if(isTRUE(grepl('ucrt', R.version$crt))){
     file.rename("../windows/ucrt64", "../windows/mingw64")
   }
 }
